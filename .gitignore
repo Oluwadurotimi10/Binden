@@ -1,0 +1,31 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+pyproject.toml
+
+# Virtual environments
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.env
+credentials.json
+token.json
+token.pickle
+data/
+*.py[cod]
+uv.lock
+
+# notebook
+*.ipynb
+.ipynb_checkpoints/
+
+#database
+*.db / *.sqlite3
+data/
+# macOS
+.DS_Store
