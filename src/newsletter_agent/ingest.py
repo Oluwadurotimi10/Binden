@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
-
 from newsletter_agent.config import DATABASE_PATH
 from newsletter_agent.database import (
     initialise_database,
@@ -9,7 +8,7 @@ from newsletter_agent.database import (
 from newsletter_agent.gmail_client import fetch_newsletters
 from newsletter_agent.parser import (
     decode_header_value,
-    extract_email_content,
+    extract_email_bodies,
 )
 
 
@@ -58,6 +57,10 @@ def transform_message(message: dict) -> dict:
     """Transform a Gmail API response into our internal schema."""
     headers = get_headers(message)
 
+    body, body_html = extract_email_bodies(
+        message.get("payload", {})
+    )
+
     return {
         "message_id": message["id"],
         "thread_id": message.get("threadId", ""),
@@ -67,12 +70,10 @@ def transform_message(message: dict) -> dict:
             headers.get("date", ""),
             message.get("internalDate"),
         ),
-        "body": extract_email_content(
-            message.get("payload", {})
-        ),
+        "body": body,
+        "body_html": body_html,
     }
-
-
+    
 def run_ingestion() -> dict[str, int]:
     """Fetch, transform and persist new newsletters."""
     initialise_database(DATABASE_PATH)

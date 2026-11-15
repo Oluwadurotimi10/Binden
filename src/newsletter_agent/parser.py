@@ -78,16 +78,8 @@ def clean_html(html: str) -> str:
     return soup.get_text(separator="\n", strip=True)
 
 
-def extract_email_content(payload: dict) -> str:
-    """
-    Prefer the plain-text email body.
-    Fall back to HTML when plain text is unavailable.
-    """
-    plain_text, html_text = extract_body(payload)
-
-    content = plain_text or clean_html(html_text)
-
-    # Normalise excessive blank lines without destroying paragraphs.
+def normalise_content(content: str) -> str:
+    """Normalise excessive blank lines without destroying paragraphs."""
     lines = [line.strip() for line in content.splitlines()]
     cleaned_lines: list[str] = []
     previous_blank = False
@@ -102,3 +94,26 @@ def extract_email_content(payload: dict) -> str:
             previous_blank = False
 
     return "\n".join(cleaned_lines).strip()
+
+
+def extract_email_bodies(payload: dict) -> tuple[str, str]:
+    """
+    Return (readable_body, original_html).
+
+    Preserve HTML separately so article links remain available
+    for downstream extraction.
+    """
+    plain_text, html_text = extract_body(payload)
+
+    readable_body = plain_text or clean_html(html_text)
+
+    return (
+        normalise_content(readable_body),
+        html_text,
+    )
+
+
+def extract_email_content(payload: dict) -> str:
+    """Backward-compatible readable email extraction."""
+    readable_body, _ = extract_email_bodies(payload)
+    return readable_body

@@ -3,7 +3,8 @@ import base64
 from newsletter_agent.parser import (
     decode_body,
     extract_body,
-    extract_email_content,
+    extract_email_bodies,
+    extract_email_content
 )
 
 
@@ -66,3 +67,63 @@ def test_multipart_plain_text_preferred():
 
     assert plain == "Plain text version"
     assert "HTML version" in html
+
+
+def test_extract_email_bodies_preserves_original_html():
+    html = """
+    <html>
+        <body>
+            <h1>AI developments</h1>
+            <a href="https://example.com/article">
+                Read the article
+            </a>
+        </body>
+    </html>
+    """
+
+    payload = {
+        "mimeType": "text/html",
+        "body": {
+            "data": base64.urlsafe_b64encode(
+                html.encode()
+            ).decode()
+        },
+    }
+
+    readable_body, original_html = extract_email_bodies(payload)
+
+    assert "AI developments" in readable_body
+    assert "Read the article" in readable_body
+    assert 'href="https://example.com/article"' in original_html
+
+
+def test_extract_email_bodies_prefers_plain_text():
+    plain_text = "Plain newsletter content"
+    html = "<p>HTML newsletter content</p>"
+
+    payload = {
+        "mimeType": "multipart/alternative",
+        "parts": [
+            {
+                "mimeType": "text/plain",
+                "body": {
+                    "data": base64.urlsafe_b64encode(
+                        plain_text.encode()
+                    ).decode()
+                },
+            },
+            {
+                "mimeType": "text/html",
+                "body": {
+                    "data": base64.urlsafe_b64encode(
+                        html.encode()
+                    ).decode()
+                },
+            },
+        ],
+    }
+
+    readable_body, original_html = extract_email_bodies(payload)
+
+    assert readable_body == plain_text
+    assert original_html == html

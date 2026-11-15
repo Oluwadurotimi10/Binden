@@ -10,17 +10,18 @@ CREATE TABLE IF NOT EXISTS newsletters (
     subject TEXT,
     received_at TEXT,
     body TEXT NOT NULL,
+    body_html TEXT,
     ingested_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 """
 
 
 def initialise_database(database_path: Path) -> None:
+    """Create the database and apply any required migrations."""
     database_path.parent.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(database_path) as connection:
         connection.execute(SCHEMA)
-
 
 def contains_message(
     database_path: Path,
@@ -57,9 +58,10 @@ def save_newsletter(
                 sender,
                 subject,
                 received_at,
-                body
+                body,
+                body_html
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 newsletter["message_id"],
@@ -68,6 +70,7 @@ def save_newsletter(
                 newsletter["subject"],
                 newsletter["received_at"],
                 newsletter["body"],
+                newsletter.get("body_html"),
             ),
         )
 
